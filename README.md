@@ -99,4 +99,5 @@ Sander van Harmelen (<sander@vanharmelen.nl>)
 
 ## Contributing
 
-Contributions are always welcome. For more information, check out the [contributing guide](https://gitlab.com/gitlab-org/client-go/blob/master/CONTRIBUTING.md)
+Contributions are always welcome. For more information, check out the
+[contributing guide](https://gitlab.com/gitlab-org/client-go/-/blob/main/CONTRIBUTING.md).
