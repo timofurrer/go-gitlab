@@ -1,0 +1,80 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_REF_PROTECTED == "true"
+
+variables:
+  GOLANGCI_LINT_VERSION: 'v1.62.0'
+  GOTESTSUM_VERSION: 'v1.12.0'
+  GOCOVER_COBERTURA_VERSION: 'v1.2.1-0.20240107185409-0818f3538137'
+
+.go-versions:
+  parallel:
+    matrix:
+      - '1.22'
+      - '1.23'
+
+cache:
+  key:
+    files:
+      - go.sum
+  paths:
+    - .go/pkg/mod
+
+# From: https://docs.gitlab.com/ee/ci/caching/#cache-go-dependencies
+.go-cache:
+  variables:
+    GOPATH: $CI_PROJECT_DIR/.go
+    GOLANGCI_LINT_CACHE: $CI_PROJECT_DIR/.golangci-lint
+  before_script:
+    - mkdir -p .go .golangci-lint
+  cache:
+    paths:
+      - .go/pkg/mod/
+      - .golangci-lint/
+
+stages:
+  - lint
+  - test
+  - deploy
+
+golangci-lint:
+  stage: lint
+  variables:
+    REPORT_FILENAME: 'gl-code-quality-report.json'
+  image: golangci/golangci-lint:$GOLANGCI_LINT_VERSION
+  script:
+    - golangci-lint run --print-issued-lines=false --out-format code-climate:$REPORT_FILENAME,line-number
+  artifacts:
+    reports:
+      codequality: $REPORT_FILENAME
+    paths: [$REPORT_FILENAME]
+    when: always
+
+tests:unit:
+  extends: ['.go-versions']
+  stage: test
+  image: golang:$GOLANG_IMAGE_VERSION
+  variables:
+    GOCOVER_COBERTURA_VERSION: 'v1.2.1-0.20240107185409-0818f3538137'
+    GOTESTSUM_FORMAT: standard-quiet
+    GOTESTSUM_JUNITFILE: tests.xml
+    COVERPROFILE_FILENAME: coverage.out
+    COVERPROFILE_XML_FILENAME: coverage.xml
+  script:
+    - go run gotest.tools/gotestsum@${GOTESTSUM_VERSION} -- -race -coverprofile=$COVERPROFILE_FILENAME -covermode=atomic ./...
+    - go run github.com/boumenot/gocover-cobertura@${GOCOVER_COBERTURA_VERSION} < $COVERPROFILE_FILENAME > $COVERPROFILE_XML_FILENAME
+    - go tool cover -func $COVERPROFILE_FILENAME
+  coverage: '/total:.+\(statements\).+\d+\.\d+/'
+  artifacts:
+    paths:
+      - tests.xml
+      - $COVERPROFILE_XML_FILENAME
+    reports:
+      junit: tests.xml
+      coverage_report:
+        path: $COVERPROFILE_XML_FILENAME
+        coverage_format: cobertura
+    when: always
