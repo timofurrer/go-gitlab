@@ -20,7 +20,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/client-go"
 )
 
 func topicExample() {

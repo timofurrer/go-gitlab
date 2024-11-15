@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/xanzy/go-gitlab"
+	"gitlab.com/gitlab-org/client-go"
 )
 
 func dataDogExample() {

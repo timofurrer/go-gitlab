@@ -19,7 +19,7 @@ package main
 import (
 	"log"
 
-	gitlab "github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/client-go"
 )
 
 func deploymentExample() {
